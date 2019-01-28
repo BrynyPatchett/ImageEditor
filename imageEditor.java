@@ -119,15 +119,15 @@ class imageEditor{
 	}
 	public static void printIntArray(int[] intArray){
 		for(int i = 0; i < intArray.length; i++){
-			System.out.print(intArray[i] + ",");
+			System.out.print(intArray[i] + "\t");
 		}			
 	}
 	public static void print2DIntArray(int[][] int2DArray){
+		System.out.println("----------------------");
 		for(int i = 0; i < int2DArray.length; i++){
 			 printIntArray(int2DArray[i]);	
 			 System.out.println("");
 		}	
-		System.out.println("----------------------");
 	}
 	
 
