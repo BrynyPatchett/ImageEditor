@@ -9,7 +9,8 @@ class imageEditor{
 	public static String[] commandList = new String[]{
 		"[1]: Covert image to greyscale and save as copy.",
 		"[2]: Edge detection on image and save as copy. ",
-		"[3]: Select a new file ",
+		"[3] Testing NxN colour Grid",
+		"[4]: Select a new file ",
 		"[9]: Exit the program "	
 	};
 	public static String[] formatPrintList = new String[]{
@@ -47,12 +48,18 @@ class imageEditor{
 				imageToEdit = ImageManipulate.readImage(imageFile);
 				int[][] grid = ImageManipulate.getPixelGrid3x3(imageToEdit, 0, 0);
 				print2DIntArray(grid);
-				grid = ImageManipulate.getPixelGrid3x3(imageToEdit, imageToEdit.getWidth() - 1 ,imageToEdit.getHeight() -1);
-				print2DIntArray(grid);
-				System.out.println("Edge detection selected. ");
-				System.out.println("Finished processing image");
+
 			}
 			else if(inputString.equals("3")) {
+				imageToEdit = ImageManipulate.readImage(imageFile);
+				int[][] grid = ImageManipulate.getPixelGridNxN(imageToEdit, 20, 20, 0 ,0);
+				print2DIntArray(grid);
+				System.out.println("Colours Array Finished");
+				System.out.println("Finished processing image");
+				grid = ImageManipulate.getPixelGridNxNCentered(imageToEdit, 20, 20, 10 ,10);
+				print2DIntArray(grid);
+			}
+			else if(inputString.equals("4")) {
 				continue;
 			}
 			else if(inputString.equals("9")) {
@@ -161,10 +168,6 @@ class ImageManipulate{
 		return image;
 	}
 	
-	
-	
-	
-	
 
 	public static void convertToGreyScale(BufferedImage image, String fileName, String fileFormat){
 		//Initalise Images
@@ -202,7 +205,9 @@ class ImageManipulate{
 		
 		
 	}
-		/*Takes in a buffered image and returns a 3x3 grid of surrounding pixels, BufferedImage arguemnt ma have to take an ImageIO.read()*/
+		/*Takes in a buffered image and returns a 3x3 grid of surrounding pixels, BufferedImage arguemnt ma have to take an ImageIO.read(), 
+		This method is essentally "getPixelGridNxNCentered(...,3,3,...,...)"  but is used specfically for the Kirsh Filters
+		*/
 		public static int[][] getPixelGrid3x3(BufferedImage image, int x, int y){
 			int[][] pixelValueArray = new int[3][3];
 			try{
@@ -226,5 +231,90 @@ class ImageManipulate{
 			}
 			return pixelValueArray;
 	}	
+	
+	
+	/*Takes a X,Y coordinates, a Buffered image and a row and coloum size, it returns a 2D array of the pixel starting at that X and Y Value*/
+			public static int[][] getPixelGridNxN(BufferedImage image, int rowNumber, int colNumber , int x, int y){
+			int[][] pixelValueArray = new int[rowNumber][colNumber];
+			try{
+				
+				for(int i = 0; i < rowNumber; i++){
+					for(int j = 0; j < colNumber; j++){
+						if(x-1+i < 0 || y-1+j < 0 || x-1+i >= image.getWidth() || y-1+j >= image.getHeight()){
+							pixelValueArray[i][j] = 0;
+						}
+						else{
+							pixelValueArray[i][j] = image.getRGB(x-1+i,y-1+j);
+						}
+					}	
+				}
+				
+				return pixelValueArray;
+			}
+			catch(Exception e){
+				System.out.println("Error: " + e);
+				System.out.println("Error With File aborting convert to greyscale");
+			}
+			return pixelValueArray;
+	}
+	
+	
+	/*Takes a X,Y coordinates, a Buffered image and a row and coloum size, it returns a 2D array of the pixel values surrounding the X and Y which will be at the center if the array*/
+	public static int[][] getPixelGridNxNCentered(BufferedImage image, int rowNumber, int colNumber , int x, int y){
+			int[][] pixelValueArray = new int[rowNumber][colNumber];
+			int xCenter = colNumber/2;
+			int yCenter = rowNumber/2;
+			try{
+				
+				for(int i = 0; i < rowNumber; i++){
+					for(int j = 0; j < colNumber; j++){
+						if(x-xCenter+i < 0 || y-yCenter+j < 0 || x-xCenter+i >= image.getWidth() || y-yCenter+j >= image.getHeight()){
+							pixelValueArray[i][j] = 0;
+						}
+						else{
+
+							pixelValueArray[i][j] = image.getRGB(x-xCenter+i,y-yCenter+j);
+							
+						}
+					}	
+				}
+				
+				return pixelValueArray;
+			}
+			catch(Exception e){
+				System.out.println("Error: " + e);
+				System.out.println("Error With File aborting convert to greyscale");
+			}
+			return pixelValueArray;
+	}	
+	
+
+	
+	    /*This method was intended to give a border of Zeros around the Image, but Should not be used as it it no longer needed*/
+		public static int[][] getPixelGridNxNZeroBorder(BufferedImage image, int rowNumber, int colNumber , int x, int y){
+			int[][] pixelValueArray = new int[rowNumber + 1][colNumber + 1];
+			try{
+				
+				for(int i = 0; i < rowNumber; i++){
+					for(int j = 0; j < colNumber; j++){
+						if(x-1+i < 0 || y-1+j < 0 || x-1+i >= image.getWidth() || y-1+j >= image.getHeight()){
+							pixelValueArray[i][j] = 0;
+						}
+						else{
+							pixelValueArray[i][j] = image.getRGB(x-1+i,y-1+j);
+						}
+					}	
+				}
+				
+				return pixelValueArray;
+			}
+			catch(Exception e){
+				System.out.println("Error: " + e);
+				System.out.println("Error With File aborting convert to greyscale");
+			}
+			return pixelValueArray;
+	}	
+	
+
 
 }
