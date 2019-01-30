@@ -11,6 +11,7 @@ class imageEditor{
 		"[2]: Edge detection on image and save as copy. ",
 		"[3] Testing NxN colour Grid",
 		"[4]: Select a new file ",
+		"[5]: Run Kirsh Edge Detection ",
 		"[9]: Exit the program "	
 	};
 	public static String[] formatPrintList = new String[]{
@@ -29,6 +30,7 @@ class imageEditor{
 		String inputString;
 		BufferedImage imageToEdit;
 		Scanner input = new Scanner(System.in);
+		boolean select = false;
 		 //loop forever
 		while(true){
 			
@@ -62,6 +64,15 @@ class imageEditor{
 			else if(inputString.equals("4")) {
 				continue;
 			}
+			else if(inputString.equals("5")) {
+				String fileName = outputFileNamer(input);
+				String fileFormat = outputFileFormat(input);
+				imageToEdit = ImageManipulate.readImage(imageFile);
+				select = selectBoolean(input);
+				ImageManipulate.kirschEdgeDetect(imageToEdit,select, fileName, fileFormat);
+				System.out.println("Finished processing image");
+				
+			}
 			else if(inputString.equals("9")) {
 				System.exit(0);
 			}		
@@ -91,6 +102,26 @@ class imageEditor{
 			}	
 		}		
 	}
+	
+	
+	public static boolean selectBoolean(Scanner input){
+		String inputString;
+		System.out.println("Do you want a strong edge magnitude value: Press '1' for Yes and '2' for No ");
+		Matcher m;
+		while(true){
+			inputString = input.nextLine();
+			if(inputString.equals("1")){
+				return true;
+			}
+			else if(inputString.equals("2")){
+			    return false;
+			}
+			else{
+				quitValidation(inputString, input);
+			}
+		}		
+	}
+	
 	
 	public static void quitValidation(String stringToTest, Scanner input){
 		Pattern p = Pattern.compile("(?i)(exit|quit)");
@@ -155,6 +186,100 @@ class imageEditor{
 
 class ImageManipulate{
 	
+	public static int[][][] kirschFiltersWeakMagnitude = 
+		{ 
+			{
+				{-1 , 0 ,1},
+				{-2 , 0 ,2},
+				{-1 , 0 ,1}
+			},
+			{
+				{-2 , -1 ,0},
+				{-1 , 0 ,1 },
+				{0 , 1 , 2 }
+			},
+			{
+				{-1 , -2 ,-1},
+				{0 , 0 ,0},
+				{1 , 2 ,1}
+			},
+			{
+				{0 , -1 ,-2},
+				{1 , 0 ,-1},
+				{2 , 1 ,0}
+			},
+			{
+				{1 , 0 ,-1},
+				{2 , 0 ,-2},
+				{1 , 0 ,-1}
+			},		
+			{
+				{2 , 1 ,0},
+				{1, 0 ,-1},
+				{0 , -1 ,-2}
+			},
+			{
+				{1 , 2 ,1},
+				{0 , 0 ,0},
+				{-1 , -2 ,-1}
+			},
+			{
+				{0 , 1 ,2},
+				{-1 , 0 ,1},
+				{-2 , -1 ,0}
+			}
+		}; 
+		
+		
+		
+			public static int[][][] kirschFiltersStrongMagnitude = 
+		{ 
+			{
+				{5 , -3 ,-3},
+				{5 , 0 ,-3},
+				{5 , -3 ,-3}
+			},
+			{
+				{5 , 5 ,-3},
+				{5 , 0 ,-3 },
+				{-3 , -3 , -3 }
+			},
+			{
+				{5 , 5 ,5},
+				{-3 , 0 ,-3},
+				{-3 , -3 ,-3}
+			},
+			{
+				{-3 , 5 ,5},
+				{-3 , 0 ,5},
+				{-3 , -3 ,-3}
+			},
+			{
+				{-3 , -3 ,5},
+				{-3 , 0 ,5},
+				{-3 , -3 ,5}
+			},		
+			{
+				{-3 , -3 ,-3},
+				{-3, 0 ,5},
+				{-3 , 5 ,5}
+			},
+			{
+				{-3 , -3 ,-3},
+				{-3 , 0 ,-3},
+				{5 , 5 ,5}
+			},
+			{
+				{-3 , -3 ,-3},
+				{5 , 0 ,-3},
+				{5 , 5 ,-3}
+			}
+		}; 
+		
+		
+	
+		
+	
 	public static BufferedImage readImage(File imageFile){
 		BufferedImage image = null;
 		try{
@@ -168,29 +293,44 @@ class ImageManipulate{
 		return image;
 	}
 	
+	
+	public static int getGreyPixelValue(BufferedImage image, int x, int y ){
+		int colour = image.getRGB(x,y);
+		int red = (colour >> 16) & 0x000000FF;
+		int green = (colour >> 8 ) & 0x000000FF;
+		int blue = (colour) & 0x000000FF;
+		int grey = (red + green + blue) /3 ;
+		return grey;	
+	}
+	public static void setPixelValue(BufferedImage image, int x, int y, int red, int green, int blue ){
+		
+		int colour =  red << 16 | green << 8 | blue;
+		image.setRGB(x,y,colour);
+	}
+	
+	
+	
 
 	public static void convertToGreyScale(BufferedImage image, String fileName, String fileFormat){
 		//Initalise Images
 		BufferedImage EditedImage = null;
+		int grey;
+		int colour;
 		try{
 			//Read in the original image
 			//Create a new image that we will save
-			EditedImage = new BufferedImage(image.getWidth(),image.getHeight(),BufferedImage.TYPE_INT_RGB);
+			EditedImage = new BufferedImage(image.getWidth(),image.getHeight(),BufferedImage.TYPE_BYTE_GRAY);
 
 			//loop thru all pixels and get their RGB colour, then save it in the other edited image
 			
 			for(int x = 0; x < image.getWidth(); x++){
 				for(int y = 0; y < image.getHeight(); y++){
-					int colour = image.getRGB(x,y);
-					int red = (colour >> 16) & 0x000000FF;
-					int green = (colour >> 8 ) & 0x000000FF;
-					int blue = (colour) & 0x000000FF;
-					int grey = (red + green + blue) /3 ;
 					
-					colour =  grey << 16 | grey << 8 | grey;
+					grey = getGreyPixelValue(image, x, y);
 					
-					
-					EditedImage.setRGB(x,y,colour);		
+					//colour =  grey << 16 | grey << 8 | grey;
+					setPixelValue(EditedImage,x,y,grey,grey,grey);
+					//EditedImage.setRGB(x,y,colour);		
 				}	
 			}
 			//Create a new output file
@@ -218,7 +358,8 @@ class ImageManipulate{
 							pixelValueArray[i][j] = 0;
 						}
 						else{
-							pixelValueArray[i][j] = image.getRGB(x-1+i,y-1+j);
+							//pixelValueArray[i][j] = image.getRGB(x-1+i,y-1+j);
+							pixelValueArray[i][j] = getGreyPixelValue(image, x-1+i, y-1+j);
 						}
 					}	
 				}
@@ -244,7 +385,8 @@ class ImageManipulate{
 							pixelValueArray[i][j] = 0;
 						}
 						else{
-							pixelValueArray[i][j] = image.getRGB(x-1+i,y-1+j);
+							//pixelValueArray[i][j] = image.getRGB(x-1+i,y-1+j);
+							pixelValueArray[i][j] = getGreyPixelValue(image, x-1+i, y-1+j);
 						}
 					}	
 				}
@@ -273,7 +415,8 @@ class ImageManipulate{
 						}
 						else{
 
-							pixelValueArray[i][j] = image.getRGB(x-xCenter+i,y-yCenter+j);
+							//pixelValueArray[i][j] = image.getRGB(x-xCenter+i,y-yCenter+j);
+							pixelValueArray[i][j] = getGreyPixelValue(image, x-xCenter+i, y-yCenter+j);
 							
 						}
 					}	
@@ -315,6 +458,75 @@ class ImageManipulate{
 			return pixelValueArray;
 	}	
 	
+	/*Multiply an array by a corrispoing array, only tested with arrays of  same size*/
+	public static int multiply2DArrayBy2DArray(int[][] array1, int[][]array2){
+		int sum = 0; 
+		for(int i =0; i < array1.length; i++){
+			for(int j =0; j < array1.length; j++){
+					sum += array1[i][j] * array2[i][j];
+				
+			}	
+		}
+		return sum;
+	}	
 
+	/*Use greyscale image for optimal results*/
+	public static void kirschEdgeDetect(BufferedImage image, boolean strength , String fileName, String fileFormat){
+		BufferedImage EditedImage = null;
+		int maxOutValue = 0;
+		int imageGrid[][];
+		int valueOut = 0;
+		try{
+			EditedImage = new BufferedImage(image.getWidth(),image.getHeight(),BufferedImage.TYPE_BYTE_GRAY);
+			
+			
+			
+				for(int imageX = 0; imageX < image.getWidth(); imageX++){
+					
+					for(int imageY = 0; imageY < image.getHeight(); imageY++){
+						
+						
+						maxOutValue = 0;
+						imageGrid = getPixelGrid3x3(image, imageX, imageY);
+						if(strength == false){
+							for(int i=0; i < 8; i++){
+								valueOut = multiply2DArrayBy2DArray(kirschFiltersWeakMagnitude[i],imageGrid);
+								if(valueOut >= maxOutValue){
+									maxOutValue = valueOut;
+								}
 
+							}
+						}else{
+								for(int i=0; i < 8; i++){
+									
+								valueOut = multiply2DArrayBy2DArray(kirschFiltersStrongMagnitude[i],imageGrid);
+								if(valueOut >= maxOutValue){
+									maxOutValue = valueOut;
+								}
+							}
+
+						}
+						//if(valueOut >= maxOutValue){
+						//maxOutValue = valueOut;
+						//}
+						maxOutValue = maxOutValue + 127;
+						if(maxOutValue < 0 ){
+							maxOutValue = 0;
+						}
+						else if(maxOutValue > 255){
+							maxOutValue = 255;
+						}
+						setPixelValue(EditedImage, imageX, imageY, maxOutValue, maxOutValue, maxOutValue );
+						//EditedImage.setRGB(imageX,imageY,maxOutValue);				
+				}
+			}
+			File newImage = new File(fileName + "." + fileFormat);
+			ImageIO.write(EditedImage,fileFormat, newImage);	
+	}
+	catch(Exception e){
+		System.out.println("Error: " + e);
+	}
+	
+	}
+	
 }
